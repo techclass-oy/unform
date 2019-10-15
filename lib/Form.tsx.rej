@@ -1,0 +1,27 @@
+diff a/lib/Form.tsx b/lib/Form.tsx	(rejected hunks)
+@@ -16 +16,4 @@ import { UnformErrors, UnformField, Omit } from './types';
+-type HTMLFormProps = DetailedHTMLProps<FormHTMLAttributes<HTMLFormElement>, HTMLFormElement>;
++type HTMLFormProps = DetailedHTMLProps<
++  FormHTMLAttributes<HTMLFormElement>,
++  HTMLFormElement
++>;
+@@ -60,3 +63 @@ function Form({
+-        fields.forEach(({
+-          name, ref, path, parseValue,
+-        }) => {
++        fields.forEach(({ name, ref, path, parseValue }) => {
+@@ -74,3 +75 @@ function Form({
+-        fields.forEach(({
+-          name, ref, path, clearValue,
+-        }) => {
++        fields.forEach(({ name, ref, path, clearValue }) => {
+@@ -120 +119 @@ function Form({
+-    [context, fields, onSubmit, schema],
++    [context, fields, onSubmit, schema]
+@@ -141 +140,5 @@ function Form({
+-      <FormElement handleSubmit={handleSubmit} isNestedForm={isNestedForm || false} {...rest}>
++      <FormElement
++        handleSubmit={handleSubmit}
++        isNestedForm={isNestedForm || false}
++        {...rest}
++      >

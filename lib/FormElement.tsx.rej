@@ -1,0 +1,49 @@
+diff a/lib/FormElement.tsx b/lib/FormElement.tsx	(rejected hunks)
+@@ -9 +9,6 @@ interface Props {
+-function FormElement({ handleSubmit, isNestedForm, children, ...others }: Props) {
++function FormElement({
++  handleSubmit,
++  isNestedForm,
++  children,
++  ...others
++}: Props) {
+@@ -12,3 +17,6 @@ function FormElement({ handleSubmit, isNestedForm, children, ...others }: Props)
+-  const nestedFormSubmitHandler = useCallback((event: Event) => {
+-    handleSubmit((event as unknown) as FormEvent);
+-  }, []);
++  const nestedFormSubmitHandler = useCallback(
++    (event: Event) => {
++      handleSubmit((event as unknown) as FormEvent);
++    },
++    [handleSubmit]
++  );
+@@ -18,3 +26,5 @@ function FormElement({ handleSubmit, isNestedForm, children, ...others }: Props)
+-      parentRef.current.querySelectorAll('button[type="submit"]').forEach(element => {
+-        element.addEventListener('click', nestedFormSubmitHandler);
+-      });
++      parentRef.current
++        .querySelectorAll('button[type="submit"]')
++        .forEach(element => {
++          element.addEventListener('click', nestedFormSubmitHandler);
++        });
+@@ -25,3 +35,5 @@ function FormElement({ handleSubmit, isNestedForm, children, ...others }: Props)
+-        parentRef.current.querySelectorAll('button[type="submit"]').forEach(element => {
+-          element.removeEventListener('click', nestedFormSubmitHandler);
+-        });
++        parentRef.current
++          .querySelectorAll('button[type="submit"]')
++          .forEach(element => {
++            element.removeEventListener('click', nestedFormSubmitHandler);
++          });
+@@ -30 +42 @@ function FormElement({ handleSubmit, isNestedForm, children, ...others }: Props)
+-  }, []);
++  }, [isNestedForm, nestedFormSubmitHandler]);
+@@ -33,2 +44,0 @@ function FormElement({ handleSubmit, isNestedForm, children, ...others }: Props)
+-    return <div ref={parentRef} {...others}>{children}</div>;
+-  } else {
+@@ -36 +46 @@ function FormElement({ handleSubmit, isNestedForm, children, ...others }: Props)
+-      <form data-testid="form" {...others} onSubmit={handleSubmit}>
++      <div ref={parentRef} {...others}>
+@@ -38 +48 @@ function FormElement({ handleSubmit, isNestedForm, children, ...others }: Props)
+-      </form>
++      </div>

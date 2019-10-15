@@ -4,10 +4,13 @@ import React, {
   useState,
   DetailedHTMLProps,
   FormHTMLAttributes,
+  useCallback,
+  memo,
 } from 'react';
 import { ObjectSchema, ValidationError } from 'yup';
 
 import FormContext from './Context';
+import FormElement from './FormElement';
 import { UnformErrors, UnformField, Omit } from './types';
 
 type HTMLFormProps = DetailedHTMLProps<
@@ -37,87 +40,92 @@ export interface FormProps extends Omit<HTMLFormProps, 'onSubmit'> {
   context?: Context;
   schema?: ObjectSchema<object>;
   onSubmit: SubmitHandler;
+  isNestedForm?: boolean;
 }
 
-export default function Form({
+function Form({
   initialData = {},
   children,
   schema,
   context = {},
   onSubmit,
+  isNestedForm,
   ...rest
 }: FormProps) {
   const [errors, setErrors] = useState<UnformErrors>({});
   const [fields, setFields] = useState<UnformField[]>([]);
 
-  function parseFormData() {
-    const data = {};
+  const handleSubmit = useCallback(
+    async (e: FormEvent) => {
+      function parseFormData() {
+        const data = {};
 
-    fields.forEach(({ name, ref, path, parseValue }) => {
-      const value = dot.pick(path, ref);
+        fields.forEach(({ name, ref, path, parseValue }) => {
+          const value = dot.pick(path, ref);
 
-      data[name] = parseValue ? parseValue(ref) : value;
-    });
-
-    dot.object(data);
-
-    return data;
-  }
-
-  function resetForm(data = {}) {
-    fields.forEach(({ name, ref, path, clearValue }) => {
-      if (clearValue) {
-        return clearValue(ref, data[name]);
-      }
-
-      return dot.set(path, data[name] ? data[name] : '', ref as object);
-    });
-  }
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-
-    let data = parseFormData();
-
-    try {
-      if (schema) {
-        await schema.validate(data, {
-          abortEarly: false,
-          stripUnknown: true,
-          context,
+          data[name] = parseValue ? parseValue(ref) : value;
         });
 
-        data = schema.cast(data, {
-          stripUnknown: true,
-          context,
+        dot.object(data);
+
+        return data;
+      }
+
+      function resetForm(data = {}) {
+        fields.forEach(({ name, ref, path, clearValue }) => {
+          if (clearValue) {
+            return clearValue(ref, data[name]);
+          }
+
+          return dot.set(path, data[name] ? data[name] : '', ref as object);
         });
       }
 
-      setErrors({});
-      onSubmit(data, { resetForm });
-    } catch (err) {
-      const validationErrors: UnformErrors = {};
+      e.preventDefault();
 
-      /* istanbul ignore next  */
-      if (!err.inner) {
-        throw err;
+      let data = parseFormData();
+
+      try {
+        if (schema) {
+          await schema.validate(data, {
+            abortEarly: false,
+            stripUnknown: true,
+            context,
+          });
+
+          data = schema.cast(data, {
+            stripUnknown: true,
+            context,
+          });
+        }
+
+        setErrors({});
+        onSubmit(data, { resetForm });
+      } catch (err) {
+        const validationErrors: UnformErrors = {};
+
+        /* istanbul ignore next  */
+        if (!err.inner) {
+          throw err;
+        }
+
+        err.inner.forEach((error: ValidationError) => {
+          validationErrors[error.path] = error.message;
+        });
+
+        setErrors(validationErrors);
       }
+    },
+    [context, fields, onSubmit, schema]
+  );
 
-      err.inner.forEach((error: ValidationError) => {
-        validationErrors[error.path] = error.message;
-      });
-
-      setErrors(validationErrors);
-    }
-  }
-
-  function registerField(field: UnformField) {
+  const registerField = useCallback((field: UnformField) => {
     setFields(state => [...state, field]);
-  }
+  }, []);
 
-  function unregisterField(name: string) {
+  const unregisterField = useCallback((name: string) => {
     setFields(state => state.filter(field => field.name !== name));
-  }
+  }, []);
 
   return (
     <FormContext.Provider
@@ -129,9 +137,15 @@ export default function Form({
         unregisterField,
       }}
     >
-      <form {...rest} data-testid="form" onSubmit={handleSubmit}>
+      <FormElement
+        handleSubmit={handleSubmit}
+        isNestedForm={isNestedForm || false}
+        {...rest}
+      >
         {children}
-      </form>
+      </FormElement>
     </FormContext.Provider>
   );
 }
+
+export default memo(Form);
